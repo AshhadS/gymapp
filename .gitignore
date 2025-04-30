@@ -1,40 +1,62 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# vercel
-.vercel
+node_modules
+dist
+dist-ssr
+*.local
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-.genkit/*
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Build Results
+/dist
+/out
+
+# Next.js directories
+/.next/
+/out/
+
+# Nuxt directories
+/.nuxt/
+/dist/
+
+# Vue directories (if using older Vue CLI)
+# /dist/
+
+# Optional Vite cache directory
+.vite
+
+# Optional Rust build files
+/target/
+
+# Optional PNPM lockfile
+pnpm-lock.yaml
+
+# Optional Bun lockfile
+bun.lockb

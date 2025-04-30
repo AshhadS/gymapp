@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Inter font (adjust path if necessary or use CDN) */
+/* Example using Google Fonts CDN in index.html or here: */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  /* Set base background and text color from theme */
+  @apply bg-background text-foreground;
+}
+
+@layer base {
+  :root {
+     /* Keep the same HSL color variables */
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 210 40% 98%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 210 40% 98%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 174 40% 58%; /* Teal */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 125 39% 64%; /* Soft Green */
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 174 40% 58%; /* Teal */
+    --chart-1: 174 40% 58%; /* Teal */
+    --chart-2: 125 39% 64%; /* Soft Green */
+    --chart-3: 210 40% 50%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+     /* Remove sidebar variables if not used */
+  }
+  .dark {
+     /* Keep dark mode variables */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 174 40% 58%; /* Teal */
+    --primary-foreground: 0 0% 10%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 125 39% 64%; /* Soft Green */
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 174 40% 58%; /* Teal */
+    --chart-1: 174 40% 58%;
+    --chart-2: 125 39% 64%;
+    --chart-3: 210 40% 50%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+     /* Remove sidebar variables if not used */
+  }
+}
+
+/* You might need to adjust PrimeVue component styles here if needed */
+/* Example: Make InputText use theme colors */
+/* .p-inputtext {
+  @apply border border-border bg-input text-foreground focus:ring-ring;
+} */
+
+/* Apply base border color */
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
