@@ -20,15 +20,17 @@ const myCustomTheme: ThemeDefinition = {
   colors: {
     background: '#FFFFFF', // White background
     surface: '#FFFFFF',    // White surface
-    primary: '#000000',    // Black as primary
+    primary: '#FCA311',    // Orange as primary
     secondary: '#E5E5E5',  // Light grey as secondary
-    'on-primary': '#FFFFFF', // White text on black primary
+    'on-primary': '#000000', // Black text on orange primary for contrast
     'on-secondary': '#000000', // Black text on light grey secondary
+    'on-background': '#000000', // Black text on white background
+    'on-surface': '#000000',   // Black text on white surface
     // Standard colors - keep them or adjust if needed
     error: '#B00020',
     info: '#2196F3',
     success: '#4CAF50',
-    warning: '#FB8C00',
+    warning: '#FB8C00', // This is close to primary, consider adjusting if needed
   },
 }
 
