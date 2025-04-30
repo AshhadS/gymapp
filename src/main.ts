@@ -1,29 +1,28 @@
-import './assets/main.css' // Base CSS including Tailwind
+import './assets/main.css'
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import PrimeVue from 'primevue/config';
-import ToastService from 'primevue/toastservice';
-import Aura from '@primevue/themes/aura'; // Example theme, adjust as needed
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 
-import App from './App.vue'
-import router from './router'
+import App from './App.vue';
+import router from './router';
 
-const app = createApp(App)
+// Vuetify
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
-app.use(createPinia())
-app.use(router)
-app.use(PrimeVue, {
-    theme: {
-        preset: Aura,
-        options: {
-            prefix: 'p',
-            darkModeSelector: '.dark', // Optional: if you use dark mode toggle
-            cssLayer: false
-        }
-    }
-});
-app.use(ToastService);
+const vuetify = createVuetify({
+  components,
+  directives,
+})
 
+const app = createApp(App);
+
+app.use(createPinia());
+app.use(router);
+app.use(vuetify)
+
+app.mount('#app');
 
 app.mount('#app')

@@ -1,23 +1,17 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler", // Changed from "bundler"
-    "strict": true,
-    "jsx": "preserve",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "lib": ["ESNext", "DOM"],
-    "skipLibCheck": true,
-    "noEmit": true,
-    "baseUrl": ".", // Added baseUrl
-    "paths": {
-      "@/*": ["src/*"] // Keep path alias
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
     },
-    "types": ["node"] // Added node types
-  },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "vite.config.ts", "tailwind.config.ts", "postcss.config.js"], // Updated include paths
-  "references": [{ "path": "./tsconfig.node.json" }] // Reference node config
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.vitest.json"
+    },
+    {
+      "path": "./nightwatch/tsconfig.json"
+    }
+  ]
 }

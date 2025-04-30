@@ -8,55 +8,26 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.DS_Store
 dist
 dist-ssr
+coverage
 *.local
+
+/cypress/videos/
+/cypress/screenshots/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Environment files
-.env
-.env.*
-!.env.example
+*.tsbuildinfo
 
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# Build Results
-/dist
-/out
-
-# Next.js directories
-/.next/
-/out/
-
-# Nuxt directories
-/.nuxt/
-/dist/
-
-# Vue directories (if using older Vue CLI)
-# /dist/
-
-# Optional Vite cache directory
-.vite
-
-# Optional Rust build files
-/target/
-
-# Optional PNPM lockfile
-pnpm-lock.yaml
-
-# Optional Bun lockfile
-bun.lockb
+logs/
+tests_output/

@@ -1,20 +1,16 @@
 {
-  "extends": "@tsconfig/node20/tsconfig.json",
   "include": [
     "vite.config.*",
     "vitest.config.*",
     "cypress.config.*",
+    "nightwatch.conf.*",
     "playwright.config.*",
-    "postcss.config.js",
-    "tailwind.config.ts" // Include Tailwind config if needed for type checking
+    "eslint.config.*"
   ],
   "compilerOptions": {
-    "composite": true,
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
 
-    "module": "ESNext",
-    "moduleResolution": "Bundler", // Changed from "Node"
-    "types": ["node"]
+    "module": "ESNext", "moduleResolution": "Bundler"
   }
 }

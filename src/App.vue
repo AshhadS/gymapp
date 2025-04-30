@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
-import Toast from 'primevue/toast';
+import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col items-center p-4 md:p-8 lg:p-12 bg-background text-foreground font-sans antialiased">
-    <RouterView />
-    <Toast position="bottom-right" />
-  </div>
+  <v-app>
+    <v-app-bar color="primary" density="comfortable">
+      <v-container>
+        <div class="d-flex align-center">
+          <v-btn to="/" variant="text" class="text-white">Home</v-btn>
+          <v-btn to="/about" variant="text" class="text-white">About</v-btn>
+          <v-btn to="/login" variant="text" class="text-white">Login</v-btn>
+          <v-btn to="/signup" variant="text" class="text-white">Signup</v-btn>
+        </div>
+      </v-container>
+    </v-app-bar>
+    <v-main>
+        <RouterView />
+    </v-main>
+  </v-app>
 </template>
 
 <style scoped>
-/* Add any App-specific styles here */
+
 </style>
