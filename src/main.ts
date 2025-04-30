@@ -18,16 +18,17 @@ import '@mdi/font/css/materialdesignicons.css' // Import MDI icons
 const myCustomTheme: ThemeDefinition = {
   dark: false, // or true if you want a dark theme by default
   colors: {
-    background: '#FFFFFF', // Example background, adjust if needed
-    surface: '#FFFFFF', // Example surface, adjust if needed
-    primary: '#FCA311', // User requested primary color
-    'primary-darken-1': '#E89005', // Example darker shade
-    secondary: '#FCA311', // User requested secondary color
-    'secondary-darken-1': '#E89005', // Example darker shade
-    error: '#B00020', // Standard error color
-    info: '#2196F3', // Standard info color
-    success: '#4CAF50', // Standard success color
-    warning: '#FB8C00', // Standard warning color
+    background: '#FFFFFF', // White background
+    surface: '#FFFFFF',    // White surface
+    primary: '#000000',    // Black as primary
+    secondary: '#E5E5E5',  // Light grey as secondary
+    'on-primary': '#FFFFFF', // White text on black primary
+    'on-secondary': '#000000', // Black text on light grey secondary
+    // Standard colors - keep them or adjust if needed
+    error: '#B00020',
+    info: '#2196F3',
+    success: '#4CAF50',
+    warning: '#FB8C00',
   },
 }
 
