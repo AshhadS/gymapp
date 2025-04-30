@@ -9,14 +9,37 @@ import { useAuthStore } from '@/stores/auth'; // Import auth store
 
 // Vuetify
 import 'vuetify/styles'
-import { createVuetify } from 'vuetify'
+import { createVuetify, type ThemeDefinition } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import '@mdi/font/css/materialdesignicons.css' // Import MDI icons
 
+// Define the custom theme
+const myCustomTheme: ThemeDefinition = {
+  dark: false, // or true if you want a dark theme by default
+  colors: {
+    background: '#FFFFFF', // Example background, adjust if needed
+    surface: '#FFFFFF', // Example surface, adjust if needed
+    primary: '#FCA311', // User requested primary color
+    'primary-darken-1': '#E89005', // Example darker shade
+    secondary: '#FCA311', // User requested secondary color
+    'secondary-darken-1': '#E89005', // Example darker shade
+    error: '#B00020', // Standard error color
+    info: '#2196F3', // Standard info color
+    success: '#4CAF50', // Standard success color
+    warning: '#FB8C00', // Standard warning color
+  },
+}
+
 const vuetify = createVuetify({
   components,
   directives,
+  theme: {
+    defaultTheme: 'myCustomTheme',
+    themes: {
+      myCustomTheme,
+    },
+  },
    icons: {
     defaultSet: 'mdi', // Ensure MDI icons are used
   },
