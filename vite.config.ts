@@ -19,4 +19,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  // Add server proxy configuration
+  server: {
+    proxy: {
+      // Proxy /api requests to the backend server
+      '/api': {
+        target: 'http://localhost:5001', // Your backend server address
+        changeOrigin: true, // Needed for virtual hosted sites
+        // secure: false, // Uncomment if backend uses self-signed certificate
+        // rewrite: (path) => path.replace(/^\/api/, ''), // Uncomment if you don't want /api prefix in backend routes
+      },
+    },
+  },
 })

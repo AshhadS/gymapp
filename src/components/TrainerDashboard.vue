@@ -1,176 +1,266 @@
 <template>
   <v-container>
-    <v-card class="pa-4" elevation="2">
-      <v-card-title class="text-h5 mb-4">Trainer Profile</v-card-title>
-      <v-card-text>
-        <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="submitProfile">
-          <v-row>
-            <!-- Left Column -->
-            <v-col cols="12" md="6">
+    <v-row>
+      <v-col>
+        <h1 class="text-h4 mb-4">Trainer Dashboard</h1>
+        <p v-if="authStore.user">Welcome, {{ authStore.user.username }}!</p>
+      </v-col>
+    </v-row>
+
+    <v-row>
+      <v-col>
+        <v-card class="pa-4" elevation="2">
+          <v-card-title>Your Profile</v-card-title>
+          <v-card-text>
+            <v-form @submit.prevent="saveProfile">
+              <!-- Profile Picture Upload Placeholder -->
+              <v-file-input
+                label="Profile Picture (Optional)"
+                prepend-icon="mdi-camera"
+                accept="image/*"
+                @change="handleFileUpload"
+                class="mb-4"
+                hint="Feature not fully implemented"
+                persistent-hint
+              ></v-file-input>
+              <!-- Display uploaded image preview if needed -->
+               <v-img v-if="profile.profilePictureUrl" :src="profile.profilePictureUrl" max-height="150" contain class="mb-4"></v-img>
+
+
               <v-textarea
                 v-model="profile.bio"
                 label="Bio/Experience Summary"
                 required
-                :rules="[v => !!v || 'Bio is required']"
-                rows="3"
+                :rules="[rules.required]"
                 auto-grow
-                variant="outlined"
-                class="mb-4"
+                rows="3"
               ></v-textarea>
 
-              <v-select
+              <v-combobox
                 v-model="profile.specializations"
-                :items="specializationOptions"
-                label="Specializations"
+                label="Specializations (e.g., powerlifting, bodybuilding)"
                 multiple
                 chips
-                clearable
-                required
-                :rules="[v => v.length > 0 || 'At least one specialization is required']"
-                variant="outlined"
-                class="mb-4"
-              ></v-select>
+                closable-chips
+                :items="suggestedSpecializations"
+                hint="Type and press Enter to add new specializations"
+                persistent-hint
+                 :rules="[rules.requiredArray]"
+              ></v-combobox>
+
+              <v-combobox
+                 v-model="profile.certifications"
+                 label="Certifications (List or Upload Placeholder)"
+                 multiple
+                 chips
+                 closable-chips
+                 hint="Type and press Enter to add certifications. File upload coming soon."
+                 persistent-hint
+                 class="mt-4"
+               ></v-combobox>
+               <!-- Actual file upload for certifications would require backend storage setup -->
+               <!-- <v-file-input multiple label="Upload Certifications (Optional)" /> -->
 
               <v-textarea
                 v-model="profile.methodology"
                 label="Training Methodology/Philosophy"
-                required
-                :rules="[v => !!v || 'Methodology is required']"
-                rows="3"
                 auto-grow
-                variant="outlined"
-                class="mb-4"
+                rows="2"
+                class="mt-4"
               ></v-textarea>
-            </v-col>
-
-            <!-- Right Column -->
-            <v-col cols="12" md="6">
-               <v-text-field
-                v-model="profile.certificationsText"
-                label="Certifications (List)"
-                placeholder="e.g., NASM CPT, CSCS"
-                variant="outlined"
-                class="mb-4"
-              ></v-text-field>
-              <!-- Add v-file-input for certification uploads if needed -->
-              <!-- <v-file-input
-                v-model="profile.certificationFiles"
-                label="Upload Certifications (Optional)"
-                multiple
-                chips
-                clearable
-                variant="outlined"
-                class="mb-4"
-              ></v-file-input> -->
 
               <v-text-field
                 v-model="profile.availability"
-                label="Availability"
-                placeholder="e.g., Mon-Fri 9am-5pm PST"
-                required
-                :rules="[v => !!v || 'Availability is required']"
-                variant="outlined"
-                class="mb-4"
+                label="Availability (e.g., Mon-Fri 9am-5pm EST)"
+                 class="mt-4"
               ></v-text-field>
 
-              <v-file-input
-                v-model="profile.profilePicture"
-                label="Profile Picture"
-                accept="image/*"
-                prepend-icon="mdi-camera"
-                variant="outlined"
-                show-size
-                clearable
-                @change="onFileChange"
-                class="mb-4"
-              ></v-file-input>
-               <v-img
-                v-if="profilePicturePreview"
-                :src="profilePicturePreview"
-                max-height="150"
-                contain
-                class="mt-2 mb-4 rounded border"
-              ></v-img>
-            </v-col>
-          </v-row>
+               <v-alert v-if="errorMessage" type="error" dense class="mt-4">
+                {{ errorMessage }}
+              </v-alert>
+               <v-alert v-if="successMessage" type="success" dense class="mt-4">
+                {{ successMessage }}
+              </v-alert>
 
-          <v-card-actions class="pa-0 mt-4">
-             <v-spacer></v-spacer>
-            <v-btn color="primary" :disabled="!valid" type="submit">
-              Save Profile
-            </v-btn>
-          </v-card-actions>
-        </v-form>
-      </v-card-text>
-    </v-card>
+              <v-progress-linear
+                indeterminate
+                color="primary"
+                v-if="loading"
+                class="my-3"
+              ></v-progress-linear>
+
+              <v-btn type="submit" color="primary" class="mt-4" :disabled="loading">
+                Save Profile
+              </v-btn>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import type { VForm } from 'vuetify/components' // Import VForm type if needed for ref typing
+import { ref, onMounted, reactive } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import apiClient from '@/services/api';
+import type { AxiosError } from 'axios';
+import type { VCombobox } from 'vuetify/components'; // Import type if needed for complex logic
 
-const form = ref<InstanceType<typeof VForm> | null>(null) // Ref for the form
-const valid = ref(false) // Form validity state
-const profilePicturePreview = ref<string | null>(null); // For image preview
 
-const profile = reactive({
+const authStore = useAuthStore();
+
+interface TrainerProfileData {
+  bio: string;
+  specializations: string[];
+  certifications: string[];
+  methodology: string;
+  availability: string;
+  profilePictureUrl: string | null; // Store URL
+}
+
+const profile = reactive<TrainerProfileData>({
   bio: '',
-  specializations: [] as string[],
-  certificationsText: '',
-  // certificationFiles: [] as File[], // Uncomment if using file upload for certs
+  specializations: [],
+  certifications: [],
   methodology: '',
   availability: '',
-  profilePicture: [] as File[], // Vuetify v-file-input uses an array even for single file
-})
+  profilePictureUrl: null, // Initialize as null
+});
 
-const specializationOptions = [
-  'Powerlifting',
-  'Bodybuilding',
-  'Olympic Weightlifting',
-  'General Strength & Conditioning',
-  'CrossFit',
-  'Functional Training',
-  'Rehabilitation',
-  'Nutrition Coaching',
-]
+// Example suggestions for combobox
+const suggestedSpecializations = ref([
+    'Powerlifting', 'Bodybuilding', 'Olympic Weightlifting', 'General Strength & Conditioning', 'Weight Loss', 'Functional Training', 'Sports Performance', 'Rehabilitation'
+]);
 
-const onFileChange = (event: Event) => {
-  const file = profile.profilePicture[0]; // Get the first file if present
+
+const loading = ref(false);
+const errorMessage = ref<string | null>(null);
+const successMessage = ref<string | null>(null);
+
+// Validation Rules
+const rules = {
+  required: (value: any) => !!value || 'Required.',
+  requiredArray: (value: string[]) => value.length > 0 || 'At least one item is required.',
+};
+
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (file) {
+    // Basic client-side preview (doesn't upload yet)
     const reader = new FileReader();
     reader.onload = (e) => {
-      profilePicturePreview.value = e.target?.result as string;
+        // For now, just setting the URL for display.
+        // Actual upload needs backend integration (e.g., to S3 or similar)
+        // and then storing the returned URL.
+        profile.profilePictureUrl = e.target?.result as string;
+        console.warn("Profile picture preview set. Actual upload to server not implemented.");
+        // TODO: Implement actual file upload logic here, post to a dedicated endpoint,
+        // get back the URL, and then set profile.profilePictureUrl to that URL before saving the profile.
     };
     reader.readAsDataURL(file);
+
   } else {
-    profilePicturePreview.value = null; // Clear preview if file is removed
+     profile.profilePictureUrl = null; // Clear preview if file removed
   }
 };
 
 
-const submitProfile = async () => {
-  if (form.value) {
-    const { valid } = await form.value.validate()
-    if (valid) {
-      console.log('Trainer profile submitted:', profile)
-      // Here you would typically send the data to your backend API
-      // e.g., await api.saveTrainerProfile(profile);
-      alert('Profile saved successfully! (Check console for data)');
-    } else {
-        console.log('Form is invalid');
-    }
+const fetchProfile = async () => {
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+  try {
+    const response = await apiClient.get('/profiles/me');
+    const data = response.data as TrainerProfileData;
+
+    profile.bio = data.bio;
+    // Ensure arrays are initialized correctly even if empty in DB
+    profile.specializations = data.specializations || [];
+    profile.certifications = data.certifications || [];
+    profile.methodology = data.methodology || '';
+    profile.availability = data.availability || '';
+    profile.profilePictureUrl = data.profilePictureUrl || null;
+
+  } catch (err) {
+      const error = err as AxiosError;
+      if (error.response && error.response.status !== 404) {
+          console.error('Error fetching profile:', error.response?.data || error.message);
+          errorMessage.value = 'Failed to load profile data.';
+      } else if (!error.response) {
+           console.error('Error fetching profile:', error.message);
+           errorMessage.value = 'An unexpected error occurred.';
+      }
+      // 404 is acceptable, means profile needs creation.
+  } finally {
+    loading.value = false;
   }
-}
+};
+
+const saveProfile = async () => {
+   // Basic frontend validation
+   if (!profile.bio || profile.specializations.length === 0) {
+       errorMessage.value = 'Please fill in required fields (Bio, Specializations).';
+       return;
+   }
+
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+
+  // TODO: If profilePictureUrl contains a local data URL (from preview),
+  // it should be uploaded first to get a persistent URL before saving the profile.
+  // For now, we assume profilePictureUrl is either null or a valid, persistent URL.
+   if (profile.profilePictureUrl && profile.profilePictureUrl.startsWith('data:image')) {
+       console.warn("Attempting to save profile with local image data URL. Implement proper upload first.");
+       // In a real app: call an upload function here, get the URL, update profile.profilePictureUrl
+       // For this example, we'll just clear it to avoid saving the large data URI
+       // profile.profilePictureUrl = null; // Or handle upload properly
+       errorMessage.value = "Profile picture upload not implemented. Please remove the picture or implement server upload.";
+       loading.value = false;
+       return;
+   }
+
+
+  try {
+    // Filter out empty strings potentially added by combobox UI if needed
+    const profileDataToSend = {
+      ...profile,
+      specializations: profile.specializations.filter(s => s.trim() !== ''),
+      certifications: profile.certifications.filter(c => c.trim() !== ''),
+    };
+
+    const response = await apiClient.post('/profiles/trainer', profileDataToSend);
+    const data = response.data as TrainerProfileData;
+
+     // Update local state with response from backend
+    profile.bio = data.bio;
+    profile.specializations = data.specializations || [];
+    profile.certifications = data.certifications || [];
+    profile.methodology = data.methodology || '';
+    profile.availability = data.availability || '';
+    profile.profilePictureUrl = data.profilePictureUrl || null;
+
+    successMessage.value = 'Profile saved successfully!';
+
+  } catch (err) {
+      const error = err as AxiosError<{ msg?: string }>;
+      console.error('Error saving profile:', error.response?.data || error.message);
+      errorMessage.value = error.response?.data?.msg || 'Failed to save profile.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Fetch profile when the component mounts
+onMounted(() => {
+   if (authStore.isLoggedIn && authStore.user?.role === 'trainer') {
+    fetchProfile();
+   }
+});
 </script>
 
 <style scoped>
-/* Add any component-specific styles here */
-.v-card {
-  max-width: 800px; /* Adjust max-width as needed */
-  margin: auto;
-}
-.border {
-  border: 1px solid #e0e0e0; /* Simple border for the preview */
-}
+/* Add specific styles if needed */
 </style>

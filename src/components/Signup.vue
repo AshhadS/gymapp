@@ -11,41 +11,48 @@
               <v-text-field
                 v-model="username"
                 label="Username"
+                name="username"
                 prepend-icon="mdi-account"
                 type="text"
                 required
+                 :error-messages="authStore.error && authStore.error.includes('username') ? authStore.error : ''"
               ></v-text-field>
+
               <v-text-field
                 v-model="password"
                 label="Password"
+                name="password"
                 prepend-icon="mdi-lock"
                 type="password"
                 required
+                 :error-messages="authStore.error && authStore.error.includes('password') ? authStore.error : ''"
               ></v-text-field>
-              <v-text-field
-                v-model="confirmPassword"
-                label="Confirm Password"
-                prepend-icon="mdi-lock-check"
-                type="password"
+
+              <v-select
+                v-model="role"
+                :items="roles"
+                label="I am a..."
+                prepend-icon="mdi-account-question"
                 required
-                :rules="[passwordConfirmationRule]"
-              ></v-text-field>
-               <v-radio-group v-model="role" inline label="Register as" required>
-                 <v-radio label="Client" value="client"></v-radio>
-                 <v-radio label="Trainer" value="trainer"></v-radio>
-               </v-radio-group>
-              <v-alert v-if="errorMessage" type="error" dense dismissible>
-                {{ errorMessage }}
+              ></v-select>
+
+               <v-alert v-if="authStore.error && !authStore.error.includes('username') && !authStore.error.includes('password')" type="error" dense class="mb-4">
+                {{ authStore.error }}
               </v-alert>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn type="submit" color="secondary">Sign Up</v-btn>
-              </v-card-actions>
+               <v-progress-linear
+                indeterminate
+                color="primary"
+                v-if="authStore.loading"
+                class="mb-3"
+              ></v-progress-linear>
+
             </v-form>
           </v-card-text>
-          <v-card-text>
-            Already have an account? <router-link to="/login">Login</router-link>
-          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="secondary" text @click="goToLogin">Login</v-btn>
+            <v-btn color="primary" @click="handleSignup" :disabled="authStore.loading">Sign Up</v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -53,53 +60,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
 
 const username = ref('');
 const password = ref('');
-const confirmPassword = ref('');
-const role = ref<'client' | 'trainer' | null>(null); // Track selected role
-const errorMessage = ref('');
-const router = useRouter();
+const role = ref<'client' | 'trainer'>('client'); // Default role
+const roles = ref(['client', 'trainer']);
+
 const authStore = useAuthStore();
+const router = useRouter();
 
-const passwordConfirmationRule = computed(() => {
-  return () => (password.value === confirmPassword.value) || 'Passwords must match';
-});
+const handleSignup = async () => {
+  const success = await authStore.register({
+    username: username.value,
+    password: password.value,
+    role: role.value,
+   });
+   if (success && authStore.user) {
+     // Redirect based on role after successful signup
+     if (authStore.user.role === 'trainer') {
+        router.push('/trainer');
+     } else if (authStore.user.role === 'client') {
+        router.push('/client');
+     } else {
+        router.push('/'); // Fallback redirect
+     }
+   }
+  // Error handling is done via authStore.error in the template
+};
 
-const handleSignup = () => {
-  errorMessage.value = ''; // Reset error message
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.';
-    return;
-  }
-   if (!role.value) {
-    errorMessage.value = 'Please select a role.';
-    return;
-  }
-
-  // Basic validation (replace with actual API call)
-  if (username.value && password.value && role.value) {
-    // Simulate successful signup and login
-     const userData = { username: username.value, role: role.value }; // Include role
-    authStore.login(userData); // Log in the user after signup
-
-    // Redirect based on role
-    if (role.value === 'trainer') {
-      router.push('/trainer');
-    } else {
-      router.push('/client');
-    }
-  } else {
-    errorMessage.value = 'Please fill in all fields.';
-  }
+const goToLogin = () => {
+  router.push('/login');
 };
 </script>
 
 <style scoped>
-.fill-height {
-  min-height: 80vh;
-}
+/* Add any specific styles if needed */
 </style>

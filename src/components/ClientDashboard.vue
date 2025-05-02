@@ -1,137 +1,183 @@
 <template>
   <v-container>
-    <v-row justify="center">
-      <v-col cols="12" md="8" lg="6">
-        <v-card class="pa-4">
-          <v-card-title class="text-h5 text-center mb-4">Client Information</v-card-title>
-          <v-card-text>
-            <v-form ref="clientInfoForm" @submit.prevent="submitForm">
-              <v-text-field
-                v-model="formData.fullName"
-                label="Full Name"
-                :rules="[rules.required]"
-                required
-                variant="outlined"
-                class="mb-3"
-              ></v-text-field>
+    <v-row>
+      <v-col>
+        <h1 class="text-h4 mb-4">Client Dashboard</h1>
+        <p v-if="authStore.user">Welcome, {{ authStore.user.username }}!</p>
+      </v-col>
+    </v-row>
 
+    <v-row>
+      <v-col>
+        <v-card class="pa-4" elevation="2">
+          <v-card-title>Your Information</v-card-title>
+          <v-card-text>
+            <v-form @submit.prevent="saveProfile">
               <v-text-field
-                v-model.number="formData.age"
+                v-model="profile.fullName"
+                label="Full Name"
+                required
+                :rules="[rules.required]"
+              ></v-text-field>
+              <v-text-field
+                v-model.number="profile.age"
                 label="Age"
                 type="number"
-                :rules="[rules.required, rules.positive]"
                 required
-                variant="outlined"
-                class="mb-3"
+                 :rules="[rules.required, rules.positiveNumber]"
               ></v-text-field>
-
-              <v-select
-                v-model="formData.gender"
-                :items="genderOptions"
+               <v-select
+                v-model="profile.gender"
+                :items="genders"
                 label="Gender"
-                :rules="[rules.required]"
                 required
-                variant="outlined"
-                class="mb-3"
+                :rules="[rules.required]"
               ></v-select>
-
               <v-text-field
-                v-model.number="formData.weight"
+                v-model.number="profile.weight"
                 label="Weight (kg)"
                 type="number"
-                :rules="[rules.required, rules.positive]"
                 required
-                variant="outlined"
-                class="mb-3"
-                suffix="kg"
+                 :rules="[rules.required, rules.positiveNumber]"
               ></v-text-field>
-
               <v-text-field
-                v-model.number="formData.height"
+                v-model.number="profile.height"
                 label="Height (cm)"
                 type="number"
-                :rules="[rules.required, rules.positive]"
                 required
-                variant="outlined"
-                class="mb-3"
-                suffix="cm"
+                :rules="[rules.required, rules.positiveNumber]"
               ></v-text-field>
 
-              <v-btn type="submit" color="primary" block :loading="loading">Submit Information</v-btn>
+              <v-alert v-if="errorMessage" type="error" dense class="mt-4">
+                {{ errorMessage }}
+              </v-alert>
+               <v-alert v-if="successMessage" type="success" dense class="mt-4">
+                {{ successMessage }}
+              </v-alert>
+
+               <v-progress-linear
+                indeterminate
+                color="primary"
+                v-if="loading"
+                class="my-3"
+              ></v-progress-linear>
+
+              <v-btn type="submit" color="primary" class="mt-4" :disabled="loading">
+                Save Profile
+              </v-btn>
             </v-form>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-     <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      timeout="3000"
-      location="top"
-    >
-      {{ snackbar.text }}
-    </v-snackbar>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import type { VForm } from 'vuetify/components'; // Correct type import for VForm
+import { ref, onMounted, reactive } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import apiClient from '@/services/api';
+import type { AxiosError } from 'axios';
 
-const clientInfoForm = ref<InstanceType<typeof VForm> | null>(null); // Use InstanceType for ref type
-const loading = ref(false);
-const snackbar = reactive({
-  show: false,
-  text: '',
-  color: 'success',
-});
+const authStore = useAuthStore();
 
-const formData = reactive({
+interface ClientProfileData {
+  fullName: string;
+  age: number | null;
+  gender: string;
+  weight: number | null;
+  height: number | null;
+}
+
+const profile = reactive<ClientProfileData>({
   fullName: '',
-  age: null as number | null,
+  age: null,
   gender: '',
-  weight: null as number | null,
-  height: null as number | null,
+  weight: null,
+  height: null,
 });
 
-const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+const genders = ref(['Male', 'Female', 'Other', 'Prefer not to say']);
+const loading = ref(false);
+const errorMessage = ref<string | null>(null);
+const successMessage = ref<string | null>(null);
 
+
+// Validation rules
 const rules = {
-  required: (value: any) => !!value || 'This field is required.',
-  positive: (value: number) => value > 0 || 'Value must be positive.',
+  required: (value: any) => !!value || 'Required.',
+  positiveNumber: (value: number) => value > 0 || 'Must be a positive number.',
 };
 
-const submitForm = async () => {
+const fetchProfile = async () => {
   loading.value = true;
-  const { valid } = await clientInfoForm.value!.validate(); // Use ! since we expect it to be defined on submit
+  errorMessage.value = null;
+  successMessage.value = null;
+  try {
+    const response = await apiClient.get('/profiles/me'); // Endpoint to get current user's profile
+    const data = response.data as ClientProfileData;
+    // Update reactive profile data
+    profile.fullName = data.fullName;
+    profile.age = data.age;
+    profile.gender = data.gender;
+    profile.weight = data.weight;
+    profile.height = data.height;
 
-  if (valid) {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    console.log('Form submitted:', formData);
-    // In a real app, you would send this data to your backend API
-    snackbar.text = 'Information submitted successfully!';
-    snackbar.color = 'success';
-    snackbar.show = true;
-    // Optionally reset the form
-    // clientInfoForm.value!.reset();
-    // Object.assign(formData, { fullName: '', age: null, gender: '', weight: null, height: null });
-  } else {
-    console.log('Form validation failed');
-    snackbar.text = 'Please fill in all required fields correctly.';
-    snackbar.color = 'error';
-    snackbar.show = true;
+  } catch (err) {
+     const error = err as AxiosError;
+     // It's okay if profile not found (404), means it needs to be created
+    if (error.response && error.response.status !== 404) {
+        console.error('Error fetching profile:', error.response?.data || error.message);
+        errorMessage.value = 'Failed to load profile data.';
+    } else if (!error.response) {
+        console.error('Error fetching profile:', error.message);
+        errorMessage.value = 'An unexpected error occurred.';
+    }
+  } finally {
+    loading.value = false;
   }
-  loading.value = false;
 };
+
+const saveProfile = async () => {
+   // Basic frontend validation check
+  if (!profile.fullName || !profile.age || !profile.gender || !profile.weight || !profile.height || profile.age <= 0 || profile.weight <= 0 || profile.height <= 0) {
+    errorMessage.value = 'Please fill in all fields correctly.';
+    return;
+  }
+
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+
+  try {
+    const response = await apiClient.post('/profiles/client', profile);
+    // Optionally update profile state again if backend modifies data
+    const data = response.data as ClientProfileData;
+    profile.fullName = data.fullName;
+    profile.age = data.age;
+    profile.gender = data.gender;
+    profile.weight = data.weight;
+    profile.height = data.height;
+
+    successMessage.value = 'Profile saved successfully!';
+
+  } catch (err) {
+    const error = err as AxiosError<{ msg?: string }>;
+    console.error('Error saving profile:', error.response?.data || error.message);
+    errorMessage.value = error.response?.data?.msg || 'Failed to save profile.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Fetch profile when the component mounts
+onMounted(() => {
+  if (authStore.isLoggedIn && authStore.user?.role === 'client') {
+    fetchProfile();
+  }
+});
 </script>
 
 <style scoped>
-/* Add any component-specific styles here */
-.mb-3 {
-  margin-bottom: 1rem; /* Adjust spacing as needed */
-}
+/* Add specific styles if needed */
 </style>
-
-    

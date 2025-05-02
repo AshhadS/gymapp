@@ -11,11 +11,13 @@
               <v-text-field
                 v-model="username"
                 label="Username"
-                name="login"
+                name="username"
                 prepend-icon="mdi-account"
                 type="text"
                 required
+                :error-messages="authStore.error && authStore.error.includes('username') ? authStore.error : ''"
               ></v-text-field>
+
               <v-text-field
                 v-model="password"
                 label="Password"
@@ -23,23 +25,24 @@
                 prepend-icon="mdi-lock"
                 type="password"
                 required
+                 :error-messages="authStore.error && authStore.error.includes('password') || authStore.error && authStore.error.includes('Invalid Credentials') ? authStore.error : ''"
               ></v-text-field>
-              <v-alert v-if="errorMessage" type="error" dense dismissible>
-                {{ errorMessage }}
+              <v-alert v-if="authStore.error && !authStore.error.includes('username') && !authStore.error.includes('password') && !authStore.error.includes('Invalid Credentials')" type="error" dense class="mb-4">
+                {{ authStore.error }}
               </v-alert>
-               <v-radio-group v-model="role" inline label="Role" required>
-                 <v-radio label="Client" value="client"></v-radio>
-                 <v-radio label="Trainer" value="trainer"></v-radio>
-               </v-radio-group>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn type="submit" color="primary">Login</v-btn>
-              </v-card-actions>
+               <v-progress-linear
+                indeterminate
+                color="primary"
+                v-if="authStore.loading"
+                class="mb-3"
+              ></v-progress-linear>
             </v-form>
           </v-card-text>
-           <v-card-text>
-            Don't have an account? <router-link to="/signup">Sign Up</router-link>
-          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+             <v-btn color="secondary" text @click="goToSignup">Sign Up</v-btn>
+            <v-btn color="primary" @click="handleLogin" :disabled="authStore.loading">Login</v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -48,42 +51,34 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
 
 const username = ref('');
 const password = ref('');
-const role = ref<'client' | 'trainer' | null>(null); // Track selected role
-const errorMessage = ref('');
-const router = useRouter();
 const authStore = useAuthStore();
+const router = useRouter();
 
-const handleLogin = () => {
-  errorMessage.value = ''; // Reset error message
-   if (!role.value) {
-    errorMessage.value = 'Please select a role.';
-    return;
-  }
-  // Basic validation (replace with actual API call)
-  if (username.value && password.value) {
-    // Simulate successful login
-    const userData = { username: username.value, role: role.value }; // Include role
-    authStore.login(userData);
-
+const handleLogin = async () => {
+  const success = await authStore.login({ username: username.value, password: password.value });
+  if (success && authStore.user) {
      // Redirect based on role
-    if (role.value === 'trainer') {
-      router.push('/trainer');
-    } else {
-      router.push('/client');
-    }
-  } else {
-    errorMessage.value = 'Invalid username or password';
+     if (authStore.user.role === 'trainer') {
+        router.push('/trainer');
+     } else if (authStore.user.role === 'client') {
+        router.push('/client');
+     } else {
+        router.push('/'); // Fallback redirect
+     }
   }
+  // Error handling is done via authStore.error in the template
+};
+
+const goToSignup = () => {
+  router.push('/signup');
 };
 </script>
 
 <style scoped>
-.fill-height {
-  min-height: 80vh;
-}
+/* Add any specific styles if needed */
 </style>

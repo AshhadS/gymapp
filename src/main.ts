@@ -53,9 +53,9 @@ const pinia = createPinia(); // Create pinia instance
 
 app.use(pinia); // Use pinia before using the store
 
-// Initialize the auth store and check persisted login state
-const authStore = useAuthStore(pinia); // Pass pinia instance
-authStore.checkPersistedLogin();
+// Initialize the auth store AFTER pinia is used by the app
+const authStore = useAuthStore();
+// No need to call checkPersistedLogin here, it's called in App.vue's onMounted
 
 
 app.use(router);
