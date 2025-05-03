@@ -1,17 +1,29 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
-import connectDB from './config/db.js';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profiles.js';
 
-// Load environment variables
+// Load environment variables from .env file
 dotenv.config();
 
-// Connect to database
-connectDB();
-
 const app = express();
+
+// --- Database Connection ---
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB Connected...');
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+    // Exit process with failure
+    process.exit(1);
+  }
+};
+
+connectDB(); // Connect to the database when the server starts
+// -------------------------
 
 // Middleware
 app.use(cors()); // Enable CORS for all origins (adjust for production)
