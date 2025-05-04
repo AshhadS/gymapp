@@ -15,10 +15,10 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore(); // Get store instance
-    const token = authStore.token; // Access token from store state
-    if (token) {
-      config.headers['x-auth-token'] = token;
-    }
+    // const token = authStore.token; // Access token from store state
+    // if (token) {
+    //   config.headers['x-auth-token'] = token;
+    // }
     return config;
   },
   (error) => {
@@ -33,7 +33,7 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Handle unauthorized access, e.g., redirect to login
       const authStore = useAuthStore();
-      authStore.logout(); // Logout the user
+      // authStore.logout(); // Logout the user
       // Optionally redirect - needs access to router, might be better handled in components
       // router.push('/login');
       console.error('Unauthorized access - logging out.');

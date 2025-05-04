@@ -56,9 +56,9 @@ router.beforeEach(async (to, from, next) => { // Make the guard async
 
   // Initialize store state by checking persisted login ONLY if not already initialized
   // This check might be redundant if App.vue's onMounted handles it reliably
-   if (!authStore.isLoggedIn && localStorage.getItem('token')) {
-     await authStore.checkPersistedLogin(); // Wait for check to complete
-   }
+  //  if (!authStore.isLoggedIn && localStorage.getItem('token')) {
+  //    await authStore.checkPersistedLogin(); // Wait for check to complete
+  //  }
 
 
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
@@ -66,16 +66,20 @@ router.beforeEach(async (to, from, next) => { // Make the guard async
   const requiredRole = to.meta.role as 'client' | 'trainer' | undefined
 
   if (requiresAuth && !authStore.isLoggedIn) {
-    // Redirect to login if trying to access a protected route without being logged in
-     console.log('Redirecting to login - requiresAuth and not logged in');
+    // Redirect to login if trying to access a protected route without being logged in    
     next({
       path: '/login',
       query: { redirect: to.fullPath },
     })
-  } else if (requiresAuth && requiredRole && authStore.user?.role !== requiredRole) {
+  } else if (requiresAuth && requiredRole && authStore.user?.role !== requiredRole && to.path !== (authStore.user?.role === 'client' ? '/client' : '/trainer'))
+  {
      // Redirect if logged in user tries to access a route for a different role
-     console.log(`Redirecting - requires role ${requiredRole}, user has role ${authStore.user?.role}`);
      // Redirect to their own dashboard or home
+     console.log(`Redirecting to the correct dashboard- requires role ${requiredRole}, user has role ${authStore.user?.role}, to path: ${to.path}`);
+     next(authStore.user?.role === 'client' ? '/client' : '/trainer')
+  }
+  else if (requiresGuest && authStore.isLoggedIn && to.path !== (authStore.user?.role === 'client' ? '/client' : '/trainer')) {
+      // Redirect logged-in users away from login/signup pages, unless they are already in their dashboard
      next(authStore.user?.role === 'client' ? '/client' : '/trainer')
   } else if (requiresGuest && authStore.isLoggedIn) {
      // Redirect logged-in users away from login/signup pages

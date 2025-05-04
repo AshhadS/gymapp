@@ -1,4 +1,12 @@
 {
+  "compilerOptions": {
+    "types": ["firebase", "pinia"],
+    "baseUrl": ".",    
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "skipLibCheck": true
+  },
   "files": [],
   "references": [
     {

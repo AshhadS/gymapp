@@ -1,4 +1,5 @@
 <template>
+  
   <v-container>
     <v-row>
       <v-col>
@@ -10,7 +11,7 @@
     <v-row>
       <v-col>
         <v-card class="pa-4" elevation="2">
-          <v-card-title>Your Profile</v-card-title>
+          <v-card-title>Your Profile</v-card-title> 
           <v-card-text>
             <v-form @submit.prevent="saveProfile">
               <!-- Profile Picture Upload Placeholder -->
@@ -59,29 +60,11 @@
                  class="mt-4"
                ></v-combobox>
                <!-- Actual file upload for certifications would require backend storage setup -->
-               <!-- <v-file-input multiple label="Upload Certifications (Optional)" /> -->
-
-              <v-textarea
-                v-model="profile.methodology"
-                label="Training Methodology/Philosophy"
-                auto-grow
-                rows="2"
-                class="mt-4"
-              ></v-textarea>
-
               <v-text-field
                 v-model="profile.availability"
                 label="Availability (e.g., Mon-Fri 9am-5pm EST)"
                  class="mt-4"
               ></v-text-field>
-
-               <v-alert v-if="errorMessage" type="error" dense class="mt-4">
-                {{ errorMessage }}
-              </v-alert>
-               <v-alert v-if="successMessage" type="success" dense class="mt-4">
-                {{ successMessage }}
-              </v-alert>
-
               <v-progress-linear
                 indeterminate
                 color="primary"
@@ -92,6 +75,12 @@
               <v-btn type="submit" color="primary" class="mt-4" :disabled="loading">
                 Save Profile
               </v-btn>
+              <v-btn
+                type="button" color="secondary" class="mt-4" @click="saveProfile"
+                :disabled="loading"
+              >
+                Save Example Data
+              </v-btn>
             </v-form>
           </v-card-text>
         </v-card>
@@ -101,11 +90,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import apiClient from '@/services/api';
-import type { AxiosError } from 'axios';
-import type { VCombobox } from 'vuetify/components'; // Import type if needed for complex logic
+import { ref, onMounted, reactive, nextTick } from 'vue';
+import { useAuthStore } from '@/stores/auth';import { doc, setDoc } from 'firebase/firestore';
+
+import { db } from '@/firebase';
 
 
 const authStore = useAuthStore();
@@ -133,16 +121,14 @@ const suggestedSpecializations = ref([
     'Powerlifting', 'Bodybuilding', 'Olympic Weightlifting', 'General Strength & Conditioning', 'Weight Loss', 'Functional Training', 'Sports Performance', 'Rehabilitation'
 ]);
 
-
-const loading = ref(false);
-const errorMessage = ref<string | null>(null);
-const successMessage = ref<string | null>(null);
-
 // Validation Rules
 const rules = {
   required: (value: any) => !!value || 'Required.',
   requiredArray: (value: string[]) => value.length > 0 || 'At least one item is required.',
 };
+
+const loading = ref(false);
+
 
 const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -167,100 +153,34 @@ const handleFileUpload = (event: Event) => {
 };
 
 
-const fetchProfile = async () => {
-  loading.value = true;
-  errorMessage.value = null;
-  successMessage.value = null;
-  try {
-    const response = await apiClient.get('/profiles/me');
-    const data = response.data as TrainerProfileData;
-
-    profile.bio = data.bio;
-    // Ensure arrays are initialized correctly even if empty in DB
-    profile.specializations = data.specializations || [];
-    profile.certifications = data.certifications || [];
-    profile.methodology = data.methodology || '';
-    profile.availability = data.availability || '';
-    profile.profilePictureUrl = data.profilePictureUrl || null;
-
-  } catch (err) {
-      const error = err as AxiosError;
-      if (error.response && error.response.status !== 404) {
-          console.error('Error fetching profile:', error.response?.data || error.message);
-          errorMessage.value = 'Failed to load profile data.';
-      } else if (!error.response) {
-           console.error('Error fetching profile:', error.message);
-           errorMessage.value = 'An unexpected error occurred.';
-      }
-      // 404 is acceptable, means profile needs creation.
-  } finally {
-    loading.value = false;
-  }
-};
 
 const saveProfile = async () => {
-   // Basic frontend validation
-   if (!profile.bio || profile.specializations.length === 0) {
-       errorMessage.value = 'Please fill in required fields (Bio, Specializations).';
-       return;
-   }
-
   loading.value = true;
-  errorMessage.value = null;
-  successMessage.value = null;
 
   // TODO: If profilePictureUrl contains a local data URL (from preview),
   // it should be uploaded first to get a persistent URL before saving the profile.
   // For now, we assume profilePictureUrl is either null or a valid, persistent URL.
-   if (profile.profilePictureUrl && profile.profilePictureUrl.startsWith('data:image')) {
-       console.warn("Attempting to save profile with local image data URL. Implement proper upload first.");
-       // In a real app: call an upload function here, get the URL, update profile.profilePictureUrl
-       // For this example, we'll just clear it to avoid saving the large data URI
-       // profile.profilePictureUrl = null; // Or handle upload properly
-       errorMessage.value = "Profile picture upload not implemented. Please remove the picture or implement server upload.";
-       loading.value = false;
-       return;
-   }
-
-
+  if (!authStore.user?.uid) {
+  if (!profile.bio || profile.specializations.length === 0) return;
+    console.error("No user logged in.");
+    return;
+  }
+    const docRef = doc(db, 'profiles', authStore.user.uid);
   try {
     // Filter out empty strings potentially added by combobox UI if needed
-    const profileDataToSend = {
+    await setDoc(docRef, {
       ...profile,
       specializations: profile.specializations.filter(s => s.trim() !== ''),
       certifications: profile.certifications.filter(c => c.trim() !== ''),
-    };
-
-    const response = await apiClient.post('/profiles/trainer', profileDataToSend);
-    const data = response.data as TrainerProfileData;
-
-     // Update local state with response from backend
-    profile.bio = data.bio;
-    profile.specializations = data.specializations || [];
-    profile.certifications = data.certifications || [];
-    profile.methodology = data.methodology || '';
-    profile.availability = data.availability || '';
-    profile.profilePictureUrl = data.profilePictureUrl || null;
-
-    successMessage.value = 'Profile saved successfully!';
-
+    });
   } catch (err) {
-      const error = err as AxiosError<{ msg?: string }>;
-      console.error('Error saving profile:', error.response?.data || error.message);
-      errorMessage.value = error.response?.data?.msg || 'Failed to save profile.';
+    console.error('Error saving profile:', err);
   } finally {
-    loading.value = false;
+     loading.value = false;
+       nextTick();
   }
 };
 
-// Fetch profile when the component mounts
-onMounted(() => {
-   if (authStore.isLoggedIn && authStore.user?.role === 'trainer') {
-    fetchProfile();
-   }
-});
+
 </script>
 
-<style scoped>
-/* Add specific styles if needed */
-</style>

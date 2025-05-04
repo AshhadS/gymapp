@@ -37,13 +37,13 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 const logout = () => {
-  authStore.logout();
+  authStore.signOut();
   router.push('/login'); // Redirect to login after logout
 };
 
 // Check persisted login state when the app loads
 onMounted(() => {
-    authStore.checkPersistedLogin();
+    // authStore.checkPersistedLogin();
 });
 
 </script>

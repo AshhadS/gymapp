@@ -1,6 +1,18 @@
 <template>
   <v-container>
     <v-row>
+       <v-col>
+         <v-btn @click="saveData" color="primary" class="float-right mr-4" >
+          Save data example
+          </v-btn>
+          <v-btn color="orange" class="float-right" @click="authStore.signOut()">
+                Logout
+          </v-btn>
+
+
+        </v-col>
+    </v-row>
+      <v-row>
       <v-col>
         <h1 class="text-h4 mb-4">Client Dashboard</h1>
         <p v-if="authStore.user">Welcome, {{ authStore.user.username }}!</p>
@@ -10,7 +22,7 @@
     <v-row>
       <v-col>
         <v-card class="pa-4" elevation="2">
-          <v-card-title>Your Information</v-card-title>
+          <v-card-title>Your Information </v-card-title>
           <v-card-text>
             <v-form @submit.prevent="saveProfile">
               <v-text-field
@@ -47,15 +59,7 @@
                 required
                 :rules="[rules.required, rules.positiveNumber]"
               ></v-text-field>
-
-              <v-alert v-if="errorMessage" type="error" dense class="mt-4">
-                {{ errorMessage }}
-              </v-alert>
-               <v-alert v-if="successMessage" type="success" dense class="mt-4">
-                {{ successMessage }}
-              </v-alert>
-
-               <v-progress-linear
+              <v-progress-linear
                 indeterminate
                 color="primary"
                 v-if="loading"
@@ -75,9 +79,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import apiClient from '@/services/api';
-import type { AxiosError } from 'axios';
+
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { useAuthStore } from '@/stores/auth'
+
 
 const authStore = useAuthStore();
 
@@ -99,8 +105,7 @@ const profile = reactive<ClientProfileData>({
 
 const genders = ref(['Male', 'Female', 'Other', 'Prefer not to say']);
 const loading = ref(false);
-const errorMessage = ref<string | null>(null);
-const successMessage = ref<string | null>(null);
+
 
 
 // Validation rules
@@ -109,73 +114,38 @@ const rules = {
   positiveNumber: (value: number) => value > 0 || 'Must be a positive number.',
 };
 
-const fetchProfile = async () => {
-  loading.value = true;
-  errorMessage.value = null;
-  successMessage.value = null;
-  try {
-    const response = await apiClient.get('/profiles/me'); // Endpoint to get current user's profile
-    const data = response.data as ClientProfileData;
-    // Update reactive profile data
-    profile.fullName = data.fullName;
-    profile.age = data.age;
-    profile.gender = data.gender;
-    profile.weight = data.weight;
-    profile.height = data.height;
-
-  } catch (err) {
-     const error = err as AxiosError;
-     // It's okay if profile not found (404), means it needs to be created
-    if (error.response && error.response.status !== 404) {
-        console.error('Error fetching profile:', error.response?.data || error.message);
-        errorMessage.value = 'Failed to load profile data.';
-    } else if (!error.response) {
-        console.error('Error fetching profile:', error.message);
-        errorMessage.value = 'An unexpected error occurred.';
-    }
-  } finally {
-    loading.value = false;
-  }
-};
-
 const saveProfile = async () => {
    // Basic frontend validation check
   if (!profile.fullName || !profile.age || !profile.gender || !profile.weight || !profile.height || profile.age <= 0 || profile.weight <= 0 || profile.height <= 0) {
-    errorMessage.value = 'Please fill in all fields correctly.';
+    console.error('Please fill in all fields correctly.');
     return;
   }
-
   loading.value = true;
-  errorMessage.value = null;
-  successMessage.value = null;
+  const docRef = doc(db, 'profiles', authStore.user.uid);
+  const data = {
+    ...profile
+  };
 
   try {
-    const response = await apiClient.post('/profiles/client', profile);
-    // Optionally update profile state again if backend modifies data
-    const data = response.data as ClientProfileData;
-    profile.fullName = data.fullName;
-    profile.age = data.age;
-    profile.gender = data.gender;
-    profile.weight = data.weight;
-    profile.height = data.height;
-
-    successMessage.value = 'Profile saved successfully!';
-
-  } catch (err) {
-    const error = err as AxiosError<{ msg?: string }>;
-    console.error('Error saving profile:', error.response?.data || error.message);
-    errorMessage.value = error.response?.data?.msg || 'Failed to save profile.';
-  } finally {
-    loading.value = false;
+    await setDoc(docRef, data);
+  } catch (error) {
+     console.error('Error saving data:', error);
+   } finally {
+     loading.value = false;
   }
 };
 
-// Fetch profile when the component mounts
-onMounted(() => {
-  if (authStore.isLoggedIn && authStore.user?.role === 'client') {
-    fetchProfile();
+const saveData = async () => {
+  if (!authStore.user?.uid) return;
+  try {
+    await setDoc(doc(db, 'profiles', authStore.user.uid), {
+      example: 'example',
+    });
+    console.log('Data saved successfully!');
+  } catch (error) {
+    console.error('Error saving data:', error);
   }
-});
+};
 </script>
 
 <style scoped>
